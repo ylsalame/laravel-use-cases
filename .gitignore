@@ -1,0 +1,16 @@
+/.idea
+/.vscode
+/.phpunit.result.cache
+/.DS_Store
+
+/vendor/
+/composer.lock
+
+/coverage/
+/build/
+/tests/reports/
+
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
