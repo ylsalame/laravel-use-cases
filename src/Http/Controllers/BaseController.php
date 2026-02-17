@@ -7,14 +7,14 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 use Ylsalame\LaravelUseCases\BaseUseCase;
 use Ylsalame\LaravelUseCases\Support\ClassInferenceHelper;
 
-class ExtendableController extends BaseController
+class BaseController extends Controller
 {
     use AuthorizesRequests;
     use DispatchesJobs;
