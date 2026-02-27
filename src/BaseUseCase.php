@@ -14,11 +14,40 @@ abstract class BaseUseCase
     protected bool $isInternalUseCase = false;
 
     /**
-     * Execute the use case with automatic transaction handling and validation.
+     * When true, the result of execute() will be transformed
+     * using the inferred Resource class when handle() is used.
+     * Default is true so callers get Resource-shaped data by default.
+     */
+    protected bool $autoResource = true;
+
+    /**
+     * Execute the use case with automatic transaction handling, validation
+     * and (optionally) resource transformation.
      *
      * @param  array<string, mixed>  $data
      */
     public function handle(array $data): mixed
+    {
+        $result = $this->handleWithoutResource($data);
+
+        if (! $this->shouldTransformWithResource()) {
+            return $result;
+        }
+
+        return $this->transformWithResource($result);
+    }
+
+    /**
+     * Execute the use case with validation and transaction handling,
+     * but without applying any Resource transformation.
+     *
+     * This is primarily intended for internal use (e.g. by the
+     * package BaseController) when the caller wants to control
+     * how Resources are applied.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function handleWithoutResource(array $data): mixed
     {
         UseCaseExecutionContext::add(static::class, $data);
 
@@ -79,6 +108,37 @@ abstract class BaseUseCase
     public function isInternalUseCase(): bool
     {
         return $this->isInternalUseCase;
+    }
+
+    protected function shouldTransformWithResource(): bool
+    {
+        return $this->autoResource;
+    }
+
+    /**
+     * Apply the inferred Resource class (if available) to the given result
+     * and return the Resource's array representation. If no matching
+     * Resource exists, the original result is returned unchanged.
+     */
+    protected function transformWithResource(mixed $result): mixed
+    {
+        $groupAndAction = ClassInferenceHelper::inferGroupAndActionFromUseCase(static::class);
+        $resourceClass = ClassInferenceHelper::buildResourceClass($groupAndAction['group'], $groupAndAction['action']);
+
+        if (! class_exists($resourceClass)) {
+            return $result;
+        }
+
+        $resource = new $resourceClass($result);
+
+        if (! method_exists($resource, 'toArray')) {
+            return $resource;
+        }
+
+        /** @var array<string, mixed>|null $array */
+        $array = $resource->toArray(request());
+
+        return $array === null ? $resource : $array;
     }
 
     /**

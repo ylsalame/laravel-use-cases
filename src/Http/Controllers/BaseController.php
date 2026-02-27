@@ -149,7 +149,10 @@ class BaseController extends Controller
             throw new RuntimeException('This UseCase is internal-only and cannot be accessed from an endpoint.');
         }
 
-        $this->useCaseResult = $useCase->handle($parameters);
+        // Controllers using this base class are responsible for applying
+        // the appropriate Resource, so we explicitly avoid any automatic
+        // Resource transformation here.
+        $this->useCaseResult = $useCase->handleWithoutResource($parameters);
     }
 
     private function triggerResourceOutput(): void

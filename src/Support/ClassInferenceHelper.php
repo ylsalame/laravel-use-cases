@@ -27,24 +27,47 @@ class ClassInferenceHelper
             throw new RuntimeException('Request route action not reachable in this context');
         }
 
-        $controllerAction = class_basename($actionName);
-        [$controller, $action] = explode('@', $controllerAction);
+        // $actionName is something like "App\Http\Controllers\Web\ModelScriptsController@index"
+        [$controllerFqcn, $method] = explode('@', $actionName);
 
-        // Remove "Controller" suffix
-        $controller = substr($controller, 0, -10);
+        // Strip the base controllers namespace to get the relative path, e.g. "Web\ModelScriptsController"
+        $relative = ltrim(str_replace('App\\Http\\Controllers\\', '', $controllerFqcn), '\\');
+        $parts = $relative !== '' ? explode('\\', $relative) : [];
+
+        if (empty($parts)) {
+            throw new RuntimeException('Unable to infer controller group from route action: ' . $actionName);
+        }
+
+        $controllerShort = array_pop($parts); // e.g. "ModelScriptsController"
+
+        // Base namespace segments (e.g. ["Web"] or ["Api", "v1"])
+        $prefixParts = $parts;
+
+        // Remove "Controller" suffix from the short name
+        $controllerBase = substr($controllerShort, 0, -10);
 
         // Pluralization handling (e.g. "ProjectsController" -> "Project")
-        if (substr($controller, -3) === 'ies') {
-            $controller = substr($controller, 0, -3) . 'y';
+        if (substr($controllerBase, -3) === 'ies') {
+            $controllerBase = substr($controllerBase, 0, -3) . 'y';
         }
 
-        if (substr($controller, -1) === 's') {
-            $controller = substr($controller, 0, -1);
+        if (substr($controllerBase, -1) === 's') {
+            $controllerBase = substr($controllerBase, 0, -1);
         }
+
+        // Build group from sub-namespaces plus singular controller name, e.g. "Web\ModelScript" or "Api\v1\Project"
+        $groupParts = array_map(
+            static fn (string $part): string => ucfirst($part),
+            array_filter($prefixParts)
+        );
+        $groupParts[] = ucfirst($controllerBase);
+        $group = implode('\\', $groupParts);
+
+        $action = ucfirst($controllerBase) . ucfirst($method);
 
         return [
-            'group' => ucfirst($controller),
-            'action' => ucfirst($controller) . ucfirst($action),
+            'group' => $group,
+            'action' => $action,
         ];
     }
 
@@ -58,8 +81,19 @@ class ClassInferenceHelper
         $className = class_basename($useCaseClass);
         $classWithoutSuffix = preg_replace('/UseCase$/', '', $className);
 
-        $namespaceParts = explode('\\', $useCaseClass);
-        $group = $namespaceParts[2] ?? '';
+        $namespaceParts = explode('\\', trim($useCaseClass, '\\'));
+
+        // Find the "UseCases" segment so we can treat everything after it (except the class)
+        // as the group path. This allows nested groups like Web\ModelScript, Api\v1\Project, etc.
+        $useCasesIndex = array_search('UseCases', $namespaceParts, true);
+
+        if ($useCasesIndex === false) {
+            // Fallback to previous behaviour: single-segment group if structure is unexpected
+            $group = $namespaceParts[2] ?? '';
+        } else {
+            $groupParts = array_slice($namespaceParts, $useCasesIndex + 1, -1);
+            $group = implode('\\', $groupParts);
+        }
 
         return [
             'group' => $group,

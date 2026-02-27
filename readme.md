@@ -36,6 +36,17 @@ This should translate into:
 - /app/UseCases/Example/ExamplePingUseCase.php
 - /app/Resources/Example/ExamplePingResource.php
 
+When a Controller is located in a subdirectory then the other files are expected to be located int he same structre in their respective parent folders.
+eg.:
+- /routes/api.php
+- /app/Http/Controllers/Api/v1/ProjectController.php
+- /app/Requests/Api/v1/Project/ProjectDeleteRequest.php
+- /app/UseCases/Api/v1/Project/ProjectDeleteUseCase.php
+- /app/Resources/Api/v1/Project/ProjectDeleteResource.php
+
+
+If you mix different types of controllers (web, api, domain-based) you need to make sure that they obey the same folder structure that the Controllers have.
+
 
 ## Clean code and DRY implementation
 
