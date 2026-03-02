@@ -24,7 +24,7 @@ class UseCasePipelineTest extends TestCase
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('use_cases.require_test_class', false);
+        $app['config']->set('laravel-use-cases.require_test_class', false);
     }
 
     public function test_use_case_pipeline_executes_and_transforms_response(): void

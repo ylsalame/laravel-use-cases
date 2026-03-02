@@ -103,21 +103,21 @@ class ClassInferenceHelper
 
     public static function buildFormRequestClass(string $group, string $action): string
     {
-        $requestsNamespace = Config::get('use_cases.requests_namespace', 'App\\Http\\Requests');
+        $requestsNamespace = Config::get('laravel-use-cases.requests_namespace', 'App\\Http\\Requests');
 
         return $requestsNamespace . '\\' . $group . '\\' . $action . 'Request';
     }
 
     public static function buildUseCaseClass(string $group, string $action): string
     {
-        $useCasesNamespace = Config::get('use_cases.use_cases_namespace', 'App\\UseCases');
+        $useCasesNamespace = Config::get('laravel-use-cases.use_cases_namespace', 'App\\UseCases');
 
         return $useCasesNamespace . '\\' . $group . '\\' . $action . 'UseCase';
     }
 
     public static function buildResourceClass(string $group, string $action): string
     {
-        $resourcesNamespace = Config::get('use_cases.resources_namespace', 'App\\Http\\Resources');
+        $resourcesNamespace = Config::get('laravel-use-cases.resources_namespace', 'App\\Http\\Resources');
 
         $specificResourceClass = $resourcesNamespace . '\\' . $group . '\\' . $action . 'Resource';
 

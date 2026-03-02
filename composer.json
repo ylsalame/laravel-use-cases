@@ -1,5 +1,6 @@
 {
   "name": "ylsalame/laravel-use-cases",
+  "version": "0.3.1",
   "description": "A reusable UseCase pattern implementation for Laravel applications, including a base UseCase, class inference helper, execution context and an extendable controller.",
   "type": "library",
   "license": "MIT",

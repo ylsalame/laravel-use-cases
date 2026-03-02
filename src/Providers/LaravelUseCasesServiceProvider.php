@@ -9,15 +9,15 @@ class LaravelUseCasesServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../../config/use_cases.php',
-            'use_cases'
+            __DIR__ . '/../../config/laravel-use-cases.php',
+            'laravel-use-cases'
         );
     }
 
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../../config/use_cases.php' => config_path('use_cases.php'),
+            __DIR__ . '/../../config/laravel-use-cases.php' => config_path('laravel-use-cases.php'),
         ], 'config');
     }
 }

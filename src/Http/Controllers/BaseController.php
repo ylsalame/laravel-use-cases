@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 use Ylsalame\LaravelUseCases\BaseUseCase;
+use Ylsalame\LaravelUseCases\Exceptions\PackageExceptionHandler;
+use Ylsalame\LaravelUseCases\Exceptions\UseCaseExceptionHandler;
+use Ylsalame\LaravelUseCases\Exceptions\UseCaseExceptionHandlerWrapper;
 use Ylsalame\LaravelUseCases\Support\ClassInferenceHelper;
 
 class BaseController extends Controller
@@ -56,14 +59,51 @@ class BaseController extends Controller
         } catch (HttpResponseException $e) {
             throw $e;
         } catch (Throwable $e) {
-            Log::error('ExtendableController - unhandled exception', [
-                'exception' => $e,
-            ]);
-
-            return response()->json([
-                'message' => 'Unexpected error while processing request.',
-            ], 500);
+            return $this->handleUseCaseException($e);
         }
+    }
+
+    /**
+     * Handle UseCase exceptions using the configured error handler.
+     */
+    private function handleUseCaseException(Throwable $e): JsonResponse
+    {
+        Log::error('ExtendableController - unhandled exception', [
+            'exception' => $e,
+        ]);
+
+        $data = array_merge(
+            request()->route()?->parameters() ?? [],
+            request()->all()
+        );
+
+        $mode = config('laravel-use-cases.error_handler_mode', 'package');
+
+        if ($mode === 'custom') {
+            $handlerClass = config('laravel-use-cases.error_handler_class');
+            if ($handlerClass && class_exists($handlerClass)) {
+                $handler = app()->make($handlerClass);
+                if ($handler instanceof UseCaseExceptionHandler) {
+                    return $handler->handle($e, $data);
+                }
+            }
+            // Fallback to package handler if custom is misconfigured
+        }
+
+        $packageHandler = app()->make(PackageExceptionHandler::class);
+        $response = $packageHandler->handle($e, $data);
+
+        if ($mode === 'wrapper') {
+            $wrapperClass = config('laravel-use-cases.error_handler_wrapper_class');
+            if ($wrapperClass && class_exists($wrapperClass)) {
+                $wrapper = app()->make($wrapperClass);
+                if ($wrapper instanceof UseCaseExceptionHandlerWrapper) {
+                    return $wrapper->handle($response, $e, $data);
+                }
+            }
+        }
+
+        return $response;
     }
 
     public function getInferredGroupAndAction(): void
@@ -98,8 +138,8 @@ class BaseController extends Controller
             $this->executionAction
         );
 
-        if (config('use_cases.require_test_class')) {
-            $rootNamespace = config('use_cases.root_namespace', 'App');
+        if (config('laravel-use-cases.require_test_class')) {
+            $rootNamespace = config('laravel-use-cases.root_namespace', 'App');
             $this->requiredTestClass = $rootNamespace . '\\Tests\\Feature\\' . $this->executionGroup . '\\' . $this->executionAction . 'Test';
         }
 
