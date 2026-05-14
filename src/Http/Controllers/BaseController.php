@@ -15,6 +15,7 @@ use Ylsalame\LaravelUseCases\BaseUseCase;
 use Ylsalame\LaravelUseCases\Exceptions\PackageExceptionHandler;
 use Ylsalame\LaravelUseCases\Exceptions\UseCaseExceptionHandler;
 use Ylsalame\LaravelUseCases\Exceptions\UseCaseExceptionHandlerWrapper;
+use Ylsalame\LaravelUseCases\Http\Responses\SuccessResponseHandler;
 use Ylsalame\LaravelUseCases\Support\ClassInferenceHelper;
 
 class BaseController extends Controller
@@ -55,7 +56,7 @@ class BaseController extends Controller
             $this->triggerUseCaseExecution();
             $this->triggerResourceOutput();
 
-            return response()->json($this->resourceOutput);
+            return $this->buildSuccessResponse($this->resourceOutput);
         } catch (HttpResponseException $e) {
             throw $e;
         } catch (Throwable $e) {
@@ -250,6 +251,20 @@ class BaseController extends Controller
 
             $this->resourceOutput = $tempArray === null ? null : $resource;
         }
+    }
+
+    protected function buildSuccessResponse(mixed $data): JsonResponse
+    {
+        $handlerClass = config('laravel-use-cases.success_response_handler_class');
+
+        if ($handlerClass && class_exists($handlerClass)) {
+            $handler = app()->make($handlerClass);
+            if ($handler instanceof SuccessResponseHandler) {
+                return $handler->handle($data);
+            }
+        }
+
+        return response()->json($data);
     }
 
     private function isDependencyMethod(): bool

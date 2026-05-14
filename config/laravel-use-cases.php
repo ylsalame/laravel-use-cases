@@ -69,4 +69,17 @@ return [
     'error_handler_class' => null,
 
     'error_handler_wrapper_class' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Success Response Handler
+    |--------------------------------------------------------------------------
+    |
+    | Set this to a class that implements SuccessResponseHandler to customise
+    | how successful responses are wrapped. When null the default bare
+    | response()->json($data) is returned.
+    |
+    */
+
+    'success_response_handler_class' => null,
 ];
