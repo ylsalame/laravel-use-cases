@@ -16,6 +16,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Source Directories
+    |--------------------------------------------------------------------------
+    |
+    | The directories (relative to base_path()) that map to the root namespace.
+    | In a standard Laravel app this is just ['app']. Projects that split
+    | managed code into a second directory (e.g. 'app-maker') can list all
+    | roots here; the package will check each in order when resolving file paths.
+    |
+    */
+
+    'source_directories' => ['app'],
+
+    /*
+    |--------------------------------------------------------------------------
     | UseCase, Request and Resource Namespaces
     |--------------------------------------------------------------------------
     |

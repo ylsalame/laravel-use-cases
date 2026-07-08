@@ -46,16 +46,7 @@ class ClassInferenceHelper
         // Remove "Controller" suffix from the short name
         $controllerBase = substr($controllerShort, 0, -10);
 
-        // Pluralization handling (e.g. "ProjectsController" -> "Project")
-        if (substr($controllerBase, -3) === 'ies') {
-            $controllerBase = substr($controllerBase, 0, -3) . 'y';
-        }
-
-        if (substr($controllerBase, -1) === 's') {
-            $controllerBase = substr($controllerBase, 0, -1);
-        }
-
-        // Build group from sub-namespaces plus singular controller name, e.g. "Web\ModelScript" or "Api\v1\Project"
+        // Build group from sub-namespaces plus controller name, e.g. "Web\ModelScript" or "System\Project"
         $groupParts = array_map(
             static fn (string $part): string => ucfirst($part),
             array_filter($prefixParts)
@@ -142,14 +133,33 @@ class ClassInferenceHelper
 
     /**
      * Convert a class name to its corresponding file path.
+     * Checks each directory listed in laravel-use-cases.source_directories in order,
+     * returning the first path where the file actually exists. Falls back to the
+     * primary directory path when no match is found.
      */
     public static function classNameToFilePath(string $className): string
     {
-        $relativePath = str_replace('App\\', 'app\\', $className);
-        $relativePath = str_replace('Tests\\', 'tests\\', $relativePath);
+        $rootNamespace = config('laravel-use-cases.root_namespace', 'App');
+        $sourceDirs = config('laravel-use-cases.source_directories', ['app']);
+
+        $relativePath = str_replace($rootNamespace . '\\', '', $className);
+        if (str_starts_with($relativePath, $rootNamespace . '\\Tests\\') || str_starts_with($relativePath, 'Tests\\')) {
+            $relativePath = preg_replace('/^(' . preg_quote($rootNamespace, '/') . '\\\\)?Tests\\\\/', 'tests\\\\', $relativePath);
+            $relativePath = str_replace('\\', '/', $relativePath);
+            return base_path($relativePath . '.php');
+        }
         $relativePath = str_replace('\\', '/', $relativePath);
 
-        return base_path($relativePath . '.php');
+        $primaryPath = base_path($sourceDirs[0] . '/' . $relativePath . '.php');
+
+        foreach ($sourceDirs as $dir) {
+            $candidate = base_path($dir . '/' . $relativePath . '.php');
+            if (file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $primaryPath;
     }
 }
 

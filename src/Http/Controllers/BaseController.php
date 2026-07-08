@@ -2,9 +2,6 @@
 
 namespace Ylsalame\LaravelUseCases\Http\Controllers;
 
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Foundation\Bus\DispatchesJobs;
-use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -20,10 +17,6 @@ use Ylsalame\LaravelUseCases\Support\ClassInferenceHelper;
 
 class BaseController extends Controller
 {
-    use AuthorizesRequests;
-    use DispatchesJobs;
-    use ValidatesRequests;
-
     private string $executionGroup;
 
     private string $executionAction;

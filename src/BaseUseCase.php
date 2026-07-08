@@ -73,6 +73,13 @@ abstract class BaseUseCase
         $groupAndAction = ClassInferenceHelper::inferGroupAndActionFromUseCase(static::class);
         $formRequestClass = ClassInferenceHelper::buildFormRequestClass($groupAndAction['group'], $groupAndAction['action']);
 
+        // Internal UseCases are exempt from needing a FormRequest. When one exists anyway
+        // (e.g. an internal UseCase that also exposes an endpoint), validate as normal.
+        // When none exists, the caller is trusted code — return the data as-is.
+        if ($this->isInternalUseCase && ! class_exists($formRequestClass)) {
+            return $data;
+        }
+
         Log::info('BaseUseCase - validating with FormRequest: ' . $formRequestClass);
 
         /** @var \Illuminate\Foundation\Http\FormRequest $formRequest */
