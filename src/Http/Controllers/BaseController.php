@@ -66,9 +66,11 @@ class BaseController extends Controller
             'exception' => $e,
         ]);
 
+        // Route parameters LAST — see the note on the same merge in triggerUseCaseExecution().
+        // The error report must name the same record the use case acted on.
         $data = array_merge(
-            request()->route()?->parameters() ?? [],
-            request()->all()
+            request()->all(),
+            request()->route()?->parameters() ?? []
         );
 
         $mode = config('laravel-use-cases.error_handler_mode', 'package');
@@ -174,9 +176,19 @@ class BaseController extends Controller
             throw new RuntimeException('Resolved use case does not extend BaseUseCase: ' . $this->requiredUseCaseClass);
         }
 
+        // Route parameters are merged LAST, so a path segment always wins over a body
+        // field of the same name.
+        //
+        // With the body last, POST /widgets/{id} carrying {"id": "other"} in its payload
+        // silently acted on "other": the URL became decorative. Any endpoint whose route
+        // parameter identifies a record was affected, and anything keyed on the URL —
+        // logging, auditing, authorisation — was bypassable by the caller.
+        //
+        // A path segment identifies the resource being addressed. A consumer that needs
+        // a body value to win should name that field differently.
         $parameters = array_merge(
-            request()->route()?->parameters() ?? [],
-            request()->all()
+            request()->all(),
+            request()->route()?->parameters() ?? []
         );
 
         if ($useCase->isInternalUseCase()) {
