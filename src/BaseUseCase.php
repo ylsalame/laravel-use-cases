@@ -21,6 +21,13 @@ abstract class BaseUseCase
     protected bool $autoResource = true;
 
     /**
+     * When false, an OUTERMOST call runs execute() with no database transaction: no BEGIN or COMMIT,
+     * and SELECTs may use the read connection. Inside a caller's transaction the UseCase joins it,
+     * whatever this says. Only for UseCases that never write.
+     */
+    protected bool $transactional = true;
+
+    /**
      * Execute the use case with automatic transaction handling, validation
      * and (optionally) resource transformation.
      *
@@ -53,7 +60,7 @@ abstract class BaseUseCase
 
         $validatedData = $this->validateWithFormRequest($data);
 
-        if (DB::transactionLevel() > 0) {
+        if (DB::transactionLevel() > 0 || ! $this->isTransactional()) {
             return $this->execute($validatedData);
         }
 
@@ -115,6 +122,11 @@ abstract class BaseUseCase
     public function isInternalUseCase(): bool
     {
         return $this->isInternalUseCase;
+    }
+
+    public function isTransactional(): bool
+    {
+        return $this->transactional;
     }
 
     protected function shouldTransformWithResource(): bool

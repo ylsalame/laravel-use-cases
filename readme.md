@@ -60,6 +60,8 @@ In a UseCase you will:
 - not have to validate the data since the Form Request is triggered before the Use Case is
 - not have to call the Resource to format the response since anything you return from the Use Case is piped into the Resource already
 
+Read-only UseCases may opt out of the transaction with `protected bool $transactional = false;`. When such a UseCase is the outermost call, `execute()` runs with no database transaction (no `BEGIN` or `COMMIT`), so its SELECTs can use a read connection. Called from inside another UseCase's transaction, it joins that transaction as before. Only use it for UseCases that never write: outside a transaction nothing is rolled back, and `DB::afterCommit()` callbacks, dispatched jobs and events run at once.
+
 In a Controller you will:
 - extend the BaseController from this package
 - not have to add any code to it
